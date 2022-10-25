@@ -1,0 +1,24 @@
+class Breakfast {
+  cook() {
+    print "Eggs a-fryin'!";
+  }
+
+  serve(who) {
+    print "Enjoy your breakfast, " + who + ".";
+  }
+}
+
+class Brunch < Breakfast{
+    init(who){
+        this.who = who;
+    }
+    serve(){
+        if (this.who == nil){
+            this.who = "guest";
+        }
+        super.serve(this.who);
+    }
+}
+
+var b = Brunch(nil);
+b.serve();

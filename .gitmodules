@@ -1,0 +1,3 @@
+[submodule "book-repo"]
+	path = book-repo
+	url = https://github.com/munificent/craftinginterpreters.git
