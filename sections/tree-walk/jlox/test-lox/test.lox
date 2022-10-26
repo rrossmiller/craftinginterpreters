@@ -1,4 +1,6 @@
 // this is a comment
 var language = "lox";
 /* this is a block comment */
+var abc="123";
+var onetwothree = 123;
 print "hi";

@@ -14,7 +14,8 @@ public class Lox {
   public static void main(String[] args) throws IOException {
     if (args.length > 1) {
       System.out.println("Usage: jlox [script]");
-      System.exit(64); // according to https://www.freebsd.org/cgi/man.cgi?query=sysexits&apropos=0&sektion=0&manpath=FreeBSD+4.3-RELEASE&format=html
+      System.exit(64); // according
+                       // to https://www.freebsd.org/cgi/man.cgi?query=sysexits&apropos=0&sektion=0&manpath=FreeBSD+4.3-RELEASE&format=html
     } else if (args.length == 1) {
       runFile(args[0]);
     } else {
@@ -50,14 +51,31 @@ public class Lox {
     Scanner scanner = new Scanner(source);
     List<Token> tokens = scanner.scanTokens();
 
-    // For now, just print the tokens.
-    for (Token token : tokens) {
-      System.out.println(token);
-    }
+    // // For now, just print the tokens.
+    // for (Token token : tokens) {
+    // System.out.println(token);
+    // }
+
+    Parser parser = new Parser(tokens);
+    Expr expression = parser.parse();
+
+    // stop if there was a syntax error
+    if (hadError)
+      return;
+
+    System.err.println(new AstPrinter().print(expression));
   }
 
   static void error(int line, String message) {
     report(line, "", message);
+  }
+
+  static void error(Token token, String message) {
+    if (token.type == TokenType.EOF) {
+      report(token.line, " at end", message);
+    } else {
+      report(token.line, " at '" + token.lexeme + "'", message);
+    }
   }
 
   private static void report(int line, String where,

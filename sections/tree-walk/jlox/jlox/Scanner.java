@@ -106,11 +106,10 @@ public class Scanner {
                 } else if (match('*')) {
                     // A block comment goes until '*/' termination
                     while (!isAtEnd() && (peek() != '*' && peekNext() != '/'))
-                        System.out.print(advance());
-                    System.out.println();
+                        advance();
                     // consume */
                     advance(2);
-                    
+
                     addToken(TokenType.COMMENT);
                 } else {
                     addToken(TokenType.SLASH);
@@ -172,6 +171,9 @@ public class Scanner {
 
         while (isDigit(peek()))
             advance();
+
+        double value = Double.parseDouble(source.substring(start, current));
+        addToken(TokenType.NUMBER, value);
     }
 
     private void string() {
@@ -228,12 +230,13 @@ public class Scanner {
     private char advance() {
         return source.charAt(current++);
     }
+
     private void advance(int n) {
         for (int i = 0; i < n; i++) {
             advance();
-        };
+        }
+        ;
     }
-
 
     // creates a new token for the curernt lexeme
     private void addToken(TokenType type) {

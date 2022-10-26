@@ -1,4 +1,4 @@
 #! /bin/zsh
 clear
-rm jlox/*.class
-javac jlox/*.java && java jlox.Lox $@
+rm bin/jlox/*.class
+javac -d bin jlox/*.java && java -cp bin jlox.Lox $@
