@@ -6,7 +6,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Scanner;
+import java.util.List;
 
 public class Lox {
   static boolean hadError = false;
@@ -14,7 +14,7 @@ public class Lox {
   public static void main(String[] args) throws IOException {
     if (args.length > 1) {
       System.out.println("Usage: jlox [script]");
-      System.exit(64);
+      System.exit(64); // according to https://www.freebsd.org/cgi/man.cgi?query=sysexits&apropos=0&sektion=0&manpath=FreeBSD+4.3-RELEASE&format=html
     } else if (args.length == 1) {
       runFile(args[0]);
     } else {
@@ -24,7 +24,6 @@ public class Lox {
 
   private static void runFile(String path) throws IOException {
     byte[] bytes = Files.readAllBytes(Paths.get(path));
-
     run(new String(bytes, Charset.defaultCharset()));
 
     // Indicate an error in the exit code.
@@ -48,12 +47,12 @@ public class Lox {
   }
 
   private static void run(String source) {
-    try (Scanner scanner = new Scanner(source)) {
-      Token[] tokens = (Token[]) scanner.tokens().toArray();
-      // For now, just print the tokens.
-      for (Token token : tokens) {
-        System.out.println(token);
-      }
+    Scanner scanner = new Scanner(source);
+    List<Token> tokens = scanner.scanTokens();
+
+    // For now, just print the tokens.
+    for (Token token : tokens) {
+      System.out.println(token);
     }
   }
 
@@ -61,8 +60,10 @@ public class Lox {
     report(line, "", message);
   }
 
-  private static void report(int line, String where, String message) {
-    System.err.println("[line " + line + "] Error" + where + ": " + message);
+  private static void report(int line, String where,
+      String message) {
+    System.err.println(
+        "[line " + line + "] Error" + where + ": " + message);
     hadError = true;
   }
 }
