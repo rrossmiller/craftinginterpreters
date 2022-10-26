@@ -1,1 +1,1 @@
-https://craftinginterpreters.com/a-tree-walk-interpreter.html
+https://craftinginterpreters.com/scanning.html\#the-scanner-class
