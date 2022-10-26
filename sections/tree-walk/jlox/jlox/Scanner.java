@@ -235,7 +235,6 @@ public class Scanner {
         for (int i = 0; i < n; i++) {
             advance();
         }
-        ;
     }
 
     // creates a new token for the curernt lexeme

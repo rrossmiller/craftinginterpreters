@@ -9,13 +9,16 @@ import java.nio.file.Paths;
 import java.util.List;
 
 public class Lox {
+  private static final Interpreter interpreter = new Interpreter();
   static boolean hadError = false;
+  static boolean hadRuntimeError = false;
 
   public static void main(String[] args) throws IOException {
     if (args.length > 1) {
       System.out.println("Usage: jlox [script]");
       System.exit(64); // according
-                       // to https://www.freebsd.org/cgi/man.cgi?query=sysexits&apropos=0&sektion=0&manpath=FreeBSD+4.3-RELEASE&format=html
+                       // to
+                       // https://www.freebsd.org/cgi/man.cgi?query=sysexits&apropos=0&sektion=0&manpath=FreeBSD+4.3-RELEASE&format=html
     } else if (args.length == 1) {
       runFile(args[0]);
     } else {
@@ -53,9 +56,10 @@ public class Lox {
 
     // // For now, just print the tokens.
     // for (Token token : tokens) {
-    // System.out.println(token);
+    //   System.out.println(token);
     // }
-
+    // System.out.println("***");
+     
     Parser parser = new Parser(tokens);
     Expr expression = parser.parse();
 
@@ -63,7 +67,8 @@ public class Lox {
     if (hadError)
       return;
 
-    System.err.println(new AstPrinter().print(expression));
+    // System.err.println(new AstPrinter().print(expression));
+    interpreter.interpret(expression);
   }
 
   static void error(int line, String message) {
@@ -78,10 +83,13 @@ public class Lox {
     }
   }
 
-  private static void report(int line, String where,
-      String message) {
-    System.err.println(
-        "[line " + line + "] Error" + where + ": " + message);
+  static void runtimeError(RuntimeError error) {
+    System.err.println(error.getMessage() + "\n[line " + error.token.line + "]");
+    hadRuntimeError = true;
+  }
+
+  private static void report(int line, String where, String message) {
+    System.err.println("[line " + line + "] Error" + where + ": " + message);
     hadError = true;
   }
 }
