@@ -83,6 +83,9 @@ class Interpreter implements Expr.Visitor<Object> {
             case SLASH:
                 checkNumberOperands(expr.operator, left, right);
                 return (double) left / (double) right;
+            case MODULO:
+                checkNumberOperands(expr.operator, left, right);
+                return (double) left % (double) right;
             case BANG_EQUAL:
                 return !isEqual(left, right);
             case EQUAL_EQUAL:
@@ -124,7 +127,7 @@ class Interpreter implements Expr.Visitor<Object> {
 
         if (object instanceof Double) {
             String text = object.toString();
-            
+
             // handle integers
             if (text.endsWith(".0")) {
                 text = text.substring(0, text.length() - 2);

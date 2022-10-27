@@ -142,7 +142,7 @@ class Parser {
     private Expr factor() {
         Expr expr = unary();
 
-        while (findMatch(TokenType.SLASH, TokenType.STAR)) {
+        while (findMatch(TokenType.SLASH, TokenType.STAR, TokenType.MODULO)) {
             Token operator = previous();
             Expr right = unary();
             expr = new Expr.Binary(expr, operator, right);

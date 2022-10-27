@@ -85,6 +85,9 @@ public class Scanner {
             case '*':
                 addToken(TokenType.STAR);
                 break;
+            case '%':
+                addToken(TokenType.MODULO);
+                break;
             case '!':
                 addToken(match('=') ? TokenType.BANG_EQUAL : TokenType.BANG);
                 break;

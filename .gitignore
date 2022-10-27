@@ -17,4 +17,6 @@ setup.cmds
 # vendor/
 
 # java
+bin
+gbin
 *.class
