@@ -6,12 +6,15 @@ import jlox.Expr.Assign;
 import jlox.Expr.Binary;
 import jlox.Expr.Grouping;
 import jlox.Expr.Literal;
+import jlox.Expr.Logical;
 import jlox.Expr.Unary;
 import jlox.Expr.Variable;
 import jlox.Stmt.Block;
 import jlox.Stmt.Expression;
+import jlox.Stmt.If;
 import jlox.Stmt.Print;
 import jlox.Stmt.Var;
+import jlox.Stmt.While;
 
 // interpret statements to runnable java
 // Every new syntax tree node gets a new visit method.
@@ -32,6 +35,21 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Object visitLiteralExpr(Literal expr) {
         return expr.value;
+    }
+
+    @Override
+    public Object visitLogicalExpr(Logical expr) {
+        Object left = evaluate(expr.left);
+
+        if (expr.operator.type == TokenType.OR) {
+            if (isTruthy(left))
+                return left;
+        } else { // it's and
+            if (!isTruthy(left))
+                return left;
+        }
+
+        return evaluate(expr.right);
     }
 
     @Override
@@ -77,7 +95,16 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             case MINUS:
                 checkNumberOperands(expr.operator, left, right);
                 return (double) left - (double) right;
+            case MINUSEQUALS:
+                checkNumberOperands(expr.operator, left, right);
+                return (double) left - (double) right;
             case PLUS:
+                if (left instanceof Double && right instanceof Double)
+                    return (double) left + (double) right;
+                if (left instanceof String && right instanceof String)
+                    return (String) left + (String) right;
+                throw new RuntimeError(expr.operator, "Operands must be two numbers or two strings.");
+            case PLUSEQUALS:
                 if (left instanceof Double && right instanceof Double)
                     return (double) left + (double) right;
                 if (left instanceof String && right instanceof String)
@@ -119,8 +146,15 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         Object value = null;
         if (stmt.initializer != null)
             value = evaluate(stmt.initializer);
-
         environment.define(stmt.name.lexeme, value); // if there's no initializer, the value is nil (null)
+        return null;
+    }
+
+    @Override
+    public Void visitWhileStmt(While stmt) {
+        while (isTruthy(evaluate(stmt.condition))) {
+            execute(stmt.body);
+        }
         return null;
     }
 
@@ -130,7 +164,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
-    public Object visitAssignExpr(Expr.Assign expr) {
+    public Object visitAssignExpr(Assign expr) {
         Object value = evaluate(expr.value);
         environment.assign(expr.name, value);
         return value;
@@ -139,6 +173,15 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Void visitBlockStmt(Block stmt) {
         executeBlock(stmt.statements, new Environment(environment));
+        return null;
+    }
+
+    @Override
+    public Void visitIfStmt(If stmt) {
+        if (isTruthy(evaluate(stmt.condition)))
+            execute(stmt.thenBranch);
+        else if (stmt.elseBranch != null)
+            execute(stmt.elseBranch);
         return null;
     }
 
@@ -208,4 +251,5 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             this.environment = previous;
         }
     }
+
 }

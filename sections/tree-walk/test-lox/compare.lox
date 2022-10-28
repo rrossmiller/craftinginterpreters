@@ -1,7 +1,8 @@
-print "a" == "b";
-print "a" == "a";
-print 1 == 2;
-print 1 + 3 * 4 % 12;
-print "je t'aime";
-print "hello world";
-3*4+"4";
+{
+    "a" == "b";
+    "a" == "a";
+}
+1 == 2;
+1 + 3 * 4 % 12;
+"je t'aime";
+"hello world";

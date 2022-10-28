@@ -20,6 +20,7 @@ class Parser {
         while (!isAtEnd()) {
             statements.add(declaration());
         }
+
         return statements;
     }
 
@@ -46,11 +47,28 @@ class Parser {
 
     // each statement gets its own method
     private Stmt statement() {
+        if (findMatch(TokenType.IF))
+            return ifStatement();
         if (findMatch(TokenType.PRINT))
             return printStatement();
+        if (findMatch(TokenType.WHILE))
+            return whileStatement();
         if (findMatch(TokenType.LEFT_BRACE))
             return new Stmt.Block(block());
         return expressionStatement();
+    }
+
+    private Stmt ifStatement() {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
+        Expr condition = expression();
+        consume(TokenType.RIGHT_PAREN, "expect ')' after if condition.");
+
+        Stmt thenBranch = statement();
+        Stmt elseBranch = null;
+
+        if (findMatch(TokenType.ELSE)) // Else is bound to nearest if. GSQL is context-based
+            elseBranch = statement();
+        return new Stmt.If(condition, thenBranch, elseBranch);
     }
 
     private Stmt printStatement() {
@@ -86,7 +104,7 @@ class Parser {
     }
 
     private Expr assignment() {
-        Expr expr = equality();
+        Expr expr = logicalOr();
         if (findMatch(TokenType.EQUAL)) {
             Token equals = previous();
             Expr value = assignment();
@@ -100,6 +118,27 @@ class Parser {
         return expr;
     }
 
+    private Expr logicalOr() {
+        Expr expr = logicalAnd();
+        while (findMatch(TokenType.OR)) {
+            Token operator = previous();
+            Expr right = logicalAnd();
+            expr = new Expr.Logical(expr, operator, right);
+        }
+        return expr;
+    }
+
+    private Expr logicalAnd() {
+        Expr expr = equality();
+
+        while (findMatch(TokenType.AND)) {
+            Token operator = previous();
+            Expr right = equality();
+            expr = new Expr.Logical(expr, operator, right);
+        }
+        return expr;
+    }
+
     private Stmt varDeclaration() {
         Token name = consume(TokenType.IDENTIFIER, "Expect variable name.");
         Expr initializer = null;
@@ -109,7 +148,14 @@ class Parser {
 
         return new Stmt.Var(name, initializer);
     }
+    private Stmt whileStatement(){
+        consume(TokenType.LEFT_PAREN, "Expect '(' after while'.")   ;
+        Expr condition = expression();
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.")   ;
+        Stmt body = statement();
 
+        return new Stmt.While(condition, body);
+    }
     private Expr equality() {
         Expr expr = comparison();
 

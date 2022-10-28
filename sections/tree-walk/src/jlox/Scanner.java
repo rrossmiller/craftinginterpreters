@@ -70,11 +70,11 @@ public class Scanner {
             case '.':
                 addToken(TokenType.DOT);
                 break;
-            case '-':
-                addToken(TokenType.MINUS);
+                case '-':
+                addToken(match('=') ? TokenType.MINUSEQUALS : TokenType.MINUS);
                 break;
             case '+':
-                addToken(TokenType.PLUS);
+                addToken(match('=') ? TokenType.PLUSEQUALS : TokenType.PLUS);
                 break;
             case ';':
                 addToken(TokenType.SEMICOLON);

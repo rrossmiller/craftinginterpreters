@@ -20,6 +20,7 @@ public class GenerateAst {
             "Binary   : Expr left, Token operator, Expr right",
             "Grouping : Expr expression",
             "Literal  : Object value",
+            "Logical  : Expr left, Token operator, Expr right",
             "Unary    : Token operator, Expr right",
             "Variable : Token name"
 
@@ -30,8 +31,10 @@ public class GenerateAst {
         List<String> stmts = Arrays.asList(
             "Block        : List<Stmt> statements",
             "Expression   : Expr expression",
+            "If           : Expr condition, Stmt thenBranch, Stmt elseBranch",
             "Print        : Expr expression",
-            "Var          : Token name, Expr initializer"
+            "Var          : Token name, Expr initializer",
+            "While        : Expr condition, Stmt body"
             );
         defineAst(outputDir, "Stmt", stmts);
     }
@@ -71,8 +74,8 @@ public class GenerateAst {
             String typeName = type.split(":")[0].trim();
 
             writer.println(
-                    "        R visit" + typeName + baseName + "(" + typeName + " " + baseName.toLowerCase() + ");\n");
-        }
+                "        R visit" + typeName + baseName + "(" + typeName + " " + baseName.toLowerCase() + ");\n");
+            }
 
         writer.println("    }\n");
     }
