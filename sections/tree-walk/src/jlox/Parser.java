@@ -48,6 +48,8 @@ class Parser {
     private Stmt statement() {
         if (findMatch(TokenType.PRINT))
             return printStatement();
+        if (findMatch(TokenType.LEFT_BRACE))
+            return new Stmt.Block(block());
         return expressionStatement();
     }
 
@@ -63,6 +65,26 @@ class Parser {
         return new Stmt.Expression(expr);
     }
 
+    /**
+     * Create an empty list and then parse statements and add them to the list until
+     * we reach the end of the block, marked by the closing }. Note that the loop
+     * also has an explicit check for isAtEnd(). We have to be careful to avoid
+     * infinite loops, even when parsing invalid code. If the user forgets a closing
+     * }, the parser needs to not get stuck.
+     * 
+     * @return
+     */
+    private List<Stmt> block() {
+        List<Stmt> statements = new ArrayList<>();
+
+        while (!check(TokenType.RIGHT_BRACE) && !isAtEnd()) {
+            statements.add(declaration());
+        }
+
+        consume(TokenType.RIGHT_BRACE, "Expect '}' after block");
+        return statements;
+    }
+
     private Expr assignment() {
         Expr expr = equality();
         if (findMatch(TokenType.EQUAL)) {
@@ -74,7 +96,7 @@ class Parser {
             }
             error(equals, "Invalid assignment target.");
         }
-        
+
         return expr;
     }
 

@@ -16,21 +16,23 @@ public class GenerateAst {
 
         // expression nodes in the AST
         List<String> types = Arrays.asList(
-                "Assign   : Token name, Expr value",
-                "Binary   : Expr left, Token operator, Expr right",
-                "Grouping : Expr expression",
-                "Literal  : Object value",
-                "Unary    : Token operator, Expr right",
-                "Variable : Token name"
+            "Assign   : Token name, Expr value",
+            "Binary   : Expr left, Token operator, Expr right",
+            "Grouping : Expr expression",
+            "Literal  : Object value",
+            "Unary    : Token operator, Expr right",
+            "Variable : Token name"
 
         );
         defineAst(outputDir, "Expr", types);
 
         // statement nodes in the AST
         List<String> stmts = Arrays.asList(
-                "Expression   : Expr expression",
-                "Print        : Expr expression",
-                "Var          : Token name, Expr initializer");
+            "Block        : List<Stmt> statements",
+            "Expression   : Expr expression",
+            "Print        : Expr expression",
+            "Var          : Token name, Expr initializer"
+            );
         defineAst(outputDir, "Stmt", stmts);
     }
 
@@ -40,8 +42,8 @@ public class GenerateAst {
 
         writer.println("package jlox;");
         writer.println();
-        // writer.println("import java.util.List;");
-        // writer.println();
+        writer.println("import java.util.List;");
+        writer.println();
 
         writer.println("abstract class " + baseName + " {");
 
