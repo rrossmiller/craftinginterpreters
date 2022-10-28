@@ -1,15 +1,28 @@
 package jlox;
 
+import java.util.List;
+
+import jlox.Expr.Assign;
 import jlox.Expr.Binary;
 import jlox.Expr.Grouping;
 import jlox.Expr.Literal;
 import jlox.Expr.Unary;
+import jlox.Expr.Variable;
+import jlox.Stmt.Expression;
+import jlox.Stmt.Print;
+import jlox.Stmt.Var;
 
-class Interpreter implements Expr.Visitor<Object> {
-    void interpret(Expr expr) {
+// interpret statements to runnable java
+// Every new syntax tree node gets a new visit method.
+class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
+    private Environment environment = new Environment();
+
+    // accepts a list of statment, otherwise called a program ;)
+    void interpret(List<Stmt> statements) {
         try {
-            Object value = evaluate(expr);
-            System.out.println(stringify(value));
+            for (Stmt statement : statements) {
+                execute(statement);
+            }
         } catch (RuntimeError error) {
             Lox.runtimeError(error);
         }
@@ -39,6 +52,36 @@ class Interpreter implements Expr.Visitor<Object> {
                 return null;
 
         }
+    }
+
+    private Object evaluate(Expr expr) {
+        return expr.accept(this);
+    }
+
+    private void execute(Stmt stmt) {
+        stmt.accept(this);
+    }
+
+    private boolean isEqual(Object a, Object b) {
+        if (a == null && b == null)
+            return true;
+        if (a == null)
+            return false;
+
+        return a.equals(b);
+    }
+
+    private void checkNumberOperand(Token operator, Object operand) {
+        if (operand instanceof Double)
+            return;
+        throw new RuntimeError(operator, "Operand must be a number.");
+    }
+
+    private void checkNumberOperands(Token operator, Object left, Object right) {
+        if (left instanceof Double && right instanceof Double)
+            return;
+
+        throw new RuntimeError(operator, "Operands must be numbers.");
     }
 
     private boolean isTruthy(Object object) {
@@ -95,30 +138,17 @@ class Interpreter implements Expr.Visitor<Object> {
         }
     }
 
-    private Object evaluate(Expr expr) {
-        return expr.accept(this);
+    @Override
+    public Void visitExpressionStmt(Expression stmt) {
+        evaluate(stmt.expression);
+        return null;
     }
 
-    private boolean isEqual(Object a, Object b) {
-        if (a == null && b == null)
-            return true;
-        if (a == null)
-            return false;
-
-        return a.equals(b);
-    }
-
-    private void checkNumberOperand(Token operator, Object operand) {
-        if (operand instanceof Double)
-            return;
-        throw new RuntimeError(operator, "Operand must be a number.");
-    }
-
-    private void checkNumberOperands(Token operator, Object left, Object right) {
-        if (left instanceof Double && right instanceof Double)
-            return;
-
-        throw new RuntimeError(operator, "Operands must be numbers.");
+    @Override
+    public Void visitPrintStmt(Print stmt) {
+        Object value = evaluate(stmt.expression);
+        System.out.println(stringify(value));
+        return null;
     }
 
     private String stringify(Object object) {
@@ -138,4 +168,25 @@ class Interpreter implements Expr.Visitor<Object> {
         return object.toString();
     }
 
+    @Override
+    public Void visitVarStmt(Var stmt) {
+        Object value = null;
+        if (stmt.initializer != null)
+            value = evaluate(stmt.initializer);
+
+        environment.define(stmt.name.lexeme, value); // if there's no initializer, the value is nil (null)
+        return null;
+    }
+
+    @Override
+    public Object visitVariableExpr(Variable expr) {
+        return environment.get(expr.name);
+    }
+
+    @Override
+    public Object visitAssignExpr(Expr.Assign expr) {
+      Object value = evaluate(expr.value);
+      environment.assign(expr.name, value);
+      return value;
+    }
 }

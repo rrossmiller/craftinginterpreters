@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+// characters to tokens
 public class Scanner {
     private static final Map<String, TokenType> keywords;
     static {
@@ -34,10 +35,6 @@ public class Scanner {
 
     Scanner(String source) {
         this.source = source;
-    }
-
-    List<Token> getTokens() {
-        return this.tokens;
     }
 
     List<Token> scanTokens() {

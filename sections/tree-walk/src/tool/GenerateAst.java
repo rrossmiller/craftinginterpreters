@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.List;
 
+//CHECKME translate EBNF to the types/statements arrays???
 public class GenerateAst {
     public static void main(String[] args) throws IOException {
         if (args.length != 1) {
@@ -13,13 +14,24 @@ public class GenerateAst {
         }
         String outputDir = args[0];
 
-        final List<String> types = Arrays.asList(
+        // expression nodes in the AST
+        List<String> types = Arrays.asList(
+                "Assign   : Token name, Expr value",
                 "Binary   : Expr left, Token operator, Expr right",
                 "Grouping : Expr expression",
                 "Literal  : Object value",
-                "Unary    : Token operator, Expr right");
+                "Unary    : Token operator, Expr right",
+                "Variable : Token name"
 
+        );
         defineAst(outputDir, "Expr", types);
+
+        // statement nodes in the AST
+        List<String> stmts = Arrays.asList(
+                "Expression   : Expr expression",
+                "Print        : Expr expression",
+                "Var          : Token name, Expr initializer");
+        defineAst(outputDir, "Stmt", stmts);
     }
 
     private static void defineAst(String outputDir, String baseName, List<String> types) throws IOException {
@@ -28,9 +40,14 @@ public class GenerateAst {
 
         writer.println("package jlox;");
         writer.println();
-        writer.println("import java.util.List;");
-        writer.println();
+        // writer.println("import java.util.List;");
+        // writer.println();
+
         writer.println("abstract class " + baseName + " {");
+
+        // The base accept() method.
+        writer.println("    abstract <R> R accept(Visitor<R> visitor);");
+        writer.println();
 
         defineVisitor(writer, baseName, types);
 
@@ -40,10 +57,6 @@ public class GenerateAst {
             String fields = type.split(":")[1].trim();
             defineType(writer, baseName, className, fields);
         }
-
-        // The base accept() method.
-        writer.println();
-        writer.println("  abstract <R> R accept(Visitor<R> visitor);");
 
         writer.println("}");
         writer.close();
@@ -64,12 +77,17 @@ public class GenerateAst {
 
     private static void defineType(PrintWriter writer, String baseName, String className, String fieldList) {
         writer.println("    static class " + className + " extends " + baseName + " {");
+        String[] fields = fieldList.split(", ");
 
+        // Fields.
+        for (String field : fields) {
+            writer.println("        final " + field + ";");
+        }
+        writer.println();
         // Constructor.
         writer.println("        " + className + "(" + fieldList + ") {");
 
         // Store parameters in fields.
-        String[] fields = fieldList.split(", ");
         for (String field : fields) {
             String name = field.split(" ")[1];
             writer.println("            this." + name + " = " + name + ";");
@@ -83,12 +101,7 @@ public class GenerateAst {
         writer.println("        <R> R accept(Visitor<R> visitor) {");
         writer.println("            return visitor.visit" +
                 className + baseName + "(this);");
-        writer.println("        }");
-        // Fields.
-        writer.println();
-        for (String field : fields) {
-            writer.println("        final " + field + ";");
-        }
+        writer.println("        }\n");
 
         writer.println("    }\n");
     }

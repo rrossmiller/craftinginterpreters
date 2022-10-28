@@ -1,9 +1,11 @@
 package jlox;
 
+import jlox.Expr.Assign;
 import jlox.Expr.Binary;
 import jlox.Expr.Grouping;
 import jlox.Expr.Literal;
 import jlox.Expr.Unary;
+import jlox.Expr.Variable;
 
 class AstPrinter implements Expr.Visitor<String> {
     String print(Expr expr) {
@@ -16,19 +18,19 @@ class AstPrinter implements Expr.Visitor<String> {
     }
 
     @Override
-    public String visitGroupingExpr(Expr.Grouping expr) {
+    public String visitGroupingExpr(Grouping expr) {
         return parenthesize("group", expr.expression);
     }
 
     @Override
-    public String visitLiteralExpr(Expr.Literal expr) {
+    public String visitLiteralExpr(Literal expr) {
         if (expr.value == null)
             return "nil";
         return expr.value.toString();
     }
 
     @Override
-    public String visitUnaryExpr(Expr.Unary expr) {
+    public String visitUnaryExpr(Unary expr) {
         return parenthesize(expr.operator.lexeme, expr.right);
     }
 
@@ -44,5 +46,17 @@ class AstPrinter implements Expr.Visitor<String> {
         builder.append(")");
 
         return builder.toString();
+    }
+
+    @Override
+    public String visitVariableExpr(Variable expr) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String visitAssignExpr(Assign expr) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

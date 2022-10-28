@@ -56,19 +56,19 @@ public class Lox {
 
     // // For now, just print the tokens.
     // for (Token token : tokens) {
-    //   System.out.println(token);
+    // System.out.println(token);
     // }
     // System.out.println("***");
-     
+
     Parser parser = new Parser(tokens);
-    Expr expression = parser.parse();
+    List<Stmt> statements = parser.parse();
 
     // stop if there was a syntax error
     if (hadError)
       return;
 
     // System.err.println(new AstPrinter().print(expression));
-    interpreter.interpret(expression);
+    interpreter.interpret(statements);
   }
 
   static void error(int line, String message) {
@@ -84,7 +84,8 @@ public class Lox {
   }
 
   static void runtimeError(RuntimeError error) {
-    System.err.println(error.getMessage() + "\n[line " + error.token.line + "]");
+    // System.err.println(error.getMessage() + "\n[line " + error.token.line + "]");
+    System.err.println("[line " + error.token.line + "] -->  " + error.getMessage());
     hadRuntimeError = true;
   }
 

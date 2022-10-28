@@ -1,7 +1,9 @@
 package jlox;
 
+import java.util.ArrayList;
 import java.util.List;
 
+// tokens to statements
 class Parser {
     private static class ParseError extends RuntimeException {
     }
@@ -13,12 +15,12 @@ class Parser {
         this.tokens = tokens;
     }
 
-    public Expr parse() {
-        try {
-            return expression();
-        } catch (ParseError error) {
-            return null;
+    public List<Stmt> parse() {
+        List<Stmt> statements = new ArrayList<>();
+        while (!isAtEnd()) {
+            statements.add(declaration());
         }
+        return statements;
     }
 
     /*
@@ -28,7 +30,62 @@ class Parser {
      * rule’s method.
      */
     private Expr expression() {
-        return equality();
+        return assignment();
+    }
+
+    private Stmt declaration() {
+        try {
+            if (findMatch(TokenType.VAR))
+                return varDeclaration();
+            return statement();
+        } catch (ParseError error) {
+            synchronize();
+            return null;
+        }
+    }
+
+    // each statement gets its own method
+    private Stmt statement() {
+        if (findMatch(TokenType.PRINT))
+            return printStatement();
+        return expressionStatement();
+    }
+
+    private Stmt printStatement() {
+        Expr value = expression();
+        consume(TokenType.SEMICOLON, "Expect ';' after value.");
+        return new Stmt.Print(value);
+    }
+
+    private Stmt expressionStatement() {
+        Expr expr = expression();
+        consume(TokenType.SEMICOLON, "Expect ';' after expression.");
+        return new Stmt.Expression(expr);
+    }
+
+    private Expr assignment() {
+        Expr expr = equality();
+        if (findMatch(TokenType.EQUAL)) {
+            Token equals = previous();
+            Expr value = assignment();
+            if (expr instanceof Expr.Variable) {
+                Token name = ((Expr.Variable) expr).name;
+                return new Expr.Assign(name, value);
+            }
+            error(equals, "Invalid assignment target.");
+        }
+        
+        return expr;
+    }
+
+    private Stmt varDeclaration() {
+        Token name = consume(TokenType.IDENTIFIER, "Expect variable name.");
+        Expr initializer = null;
+        if (findMatch(TokenType.EQUAL))
+            initializer = expression();
+        consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
+
+        return new Stmt.Var(name, initializer);
     }
 
     private Expr equality() {
@@ -174,6 +231,8 @@ class Parser {
         if (findMatch(TokenType.NUMBER, TokenType.STRING)) {
             return new Expr.Literal(previous().literal);
         }
+        if (findMatch(TokenType.IDENTIFIER))
+            return new Expr.Variable(previous());
 
         if (findMatch(TokenType.LEFT_PAREN)) {
             Expr expr = expression();

@@ -1,6 +1,7 @@
-// this is a comment
-var language = "lox";
-/* this is a block comment */
-var abc="123";
+var language = "english";
+language    = "lox";
+var abc         = "123";
 var onetwothree = 123;
-print "hi";
+
+print onetwothree + 1;
+print abc + "4";
