@@ -1,6 +1,7 @@
 package jlox;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 // tokens to statements
@@ -36,8 +37,9 @@ class Parser {
 
     private Stmt declaration() {
         try {
-            if (findMatch(TokenType.VAR))
+            if (findMatch(TokenType.VAR)) {
                 return varDeclaration();
+            }
             return statement();
         } catch (ParseError error) {
             synchronize();
@@ -47,6 +49,8 @@ class Parser {
 
     // each statement gets its own method
     private Stmt statement() {
+        if (findMatch(TokenType.FOR))
+            return forStatement();
         if (findMatch(TokenType.IF))
             return ifStatement();
         if (findMatch(TokenType.PRINT))
@@ -56,6 +60,51 @@ class Parser {
         if (findMatch(TokenType.LEFT_BRACE))
             return new Stmt.Block(block());
         return expressionStatement();
+    }
+
+    private Stmt forStatement() {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+        // **
+        Stmt initializer;
+        if (findMatch(TokenType.SEMICOLON)) { // initializer omited
+            initializer = null;
+        } else if (findMatch(TokenType.VAR)) { // initialize new var
+            initializer = varDeclaration();
+        } else {
+            initializer = expressionStatement();
+        }
+
+        // **
+        Expr condition = null;
+        if (!check(TokenType.SEMICOLON)) {
+            condition = expression();
+        }
+        consume(TokenType.SEMICOLON, "Expect ';' after loop condition");
+
+        // **
+        Expr increment = null;
+        if (!check(TokenType.RIGHT_PAREN)) {
+            increment = expression();
+        }
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
+
+        // **
+        Stmt body = statement();
+        if (increment != null)
+            // run the body, then run the increment
+            body = new Stmt.Block(
+                    Arrays.asList(body, new Stmt.Expression(increment)));
+
+        if (condition == null)
+            // if there's no for condition, run infinite while
+            condition = new Expr.Literal(true);
+        body = new Stmt.While(condition, body);
+
+        if (initializer != null)
+            // run initializer first, then body (which could be definied differenly above)
+            body = new Stmt.Block(Arrays.asList(initializer, body));
+
+        return body;
     }
 
     private Stmt ifStatement() {
@@ -113,6 +162,15 @@ class Parser {
                 return new Expr.Assign(name, value);
             }
             error(equals, "Invalid assignment target.");
+        } else if (findMatch(TokenType.PLUSEQUALS, TokenType.MINUSEQUALS)) {
+            Token operator = previous();
+
+            Expr right = factor();
+            Token name = ((Expr.Variable) expr).name;
+            Expr value = new Expr.Binary(expr, operator, right);
+            return new Expr.Assign(name, value);
+
+            // TODO put this in error(equals, "Invalid assignment target.");
         }
 
         return expr;
@@ -142,16 +200,11 @@ class Parser {
     private Stmt varDeclaration() {
         Token name = consume(TokenType.IDENTIFIER, "Expect variable name.");
         Expr initializer = null;
-        if (findMatch(TokenType.EQUAL))
+
+        if (findMatch(TokenType.EQUAL)) {
             initializer = expression();
-        else if (findMatch(TokenType.PLUSEQUALS, TokenType.MINUSEQUALS)) {
-            Expr var = new Expr.Variable(name);
-            Token operator = previous();
-            Expr right = factor();
-            initializer = new Expr.Binary(var, operator, right);
         }
         consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
-
         return new Stmt.Var(name, initializer);
     }
 
@@ -183,6 +236,66 @@ class Parser {
             expr = new Expr.Binary(expr, operator, right);
         }
         return expr;
+    }
+
+    private Expr term() {
+        Expr expr = factor();
+
+        while (findMatch(TokenType.MINUS, TokenType.PLUS)) {
+            Token operator = previous();
+            Expr right = factor();
+            expr = new Expr.Binary(expr, operator, right);
+        }
+
+        return expr;
+    }
+
+    private Expr factor() {
+        Expr expr = unary();
+
+        while (findMatch(TokenType.SLASH, TokenType.STAR, TokenType.MODULO)) {
+            Token operator = previous();
+            Expr right = unary();
+            expr = new Expr.Binary(expr, operator, right);
+        }
+
+        return expr;
+    }
+
+    private Expr unary() {
+        if (findMatch(TokenType.BANG, TokenType.MINUS)) {
+            Token operator = previous();
+            Expr right = unary();
+            return new Expr.Unary(operator, right);
+        }
+
+        return primary();
+    }
+
+    private Expr primary() {
+        if (findMatch(TokenType.FALSE))
+            return new Expr.Literal(false);
+
+        if (findMatch(TokenType.TRUE))
+            return new Expr.Literal(true);
+
+        if (findMatch(TokenType.NIL))
+            return new Expr.Literal(null);
+
+        if (findMatch(TokenType.NUMBER, TokenType.STRING)) {
+            return new Expr.Literal(previous().literal);
+        }
+        if (findMatch(TokenType.IDENTIFIER))
+            return new Expr.Variable(previous());
+
+        if (findMatch(TokenType.LEFT_PAREN)) {
+            Expr expr = expression();
+            consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
+            return new Expr.Grouping(expr);
+        }
+
+        // if here, current is a token that can't start an expression
+        throw error(peek(), "Expect expression.");
     }
 
     private boolean findMatch(TokenType... types) {
@@ -258,65 +371,5 @@ class Parser {
 
             advance();
         }
-    }
-
-    private Expr term() {
-        Expr expr = factor();
-
-        while (findMatch(TokenType.MINUS, TokenType.PLUS)) {
-            Token operator = previous();
-            Expr right = factor();
-            expr = new Expr.Binary(expr, operator, right);
-        }
-
-        return expr;
-    }
-
-    private Expr factor() {
-        Expr expr = unary();
-
-        while (findMatch(TokenType.SLASH, TokenType.STAR, TokenType.MODULO)) {
-            Token operator = previous();
-            Expr right = unary();
-            expr = new Expr.Binary(expr, operator, right);
-        }
-
-        return expr;
-    }
-
-    private Expr unary() {
-        if (findMatch(TokenType.BANG, TokenType.MINUS)) {
-            Token operator = previous();
-            Expr right = unary();
-            return new Expr.Unary(operator, right);
-        }
-
-        return primary();
-    }
-
-    private Expr primary() {
-        if (findMatch(TokenType.FALSE))
-            return new Expr.Literal(false);
-
-        if (findMatch(TokenType.TRUE))
-            return new Expr.Literal(true);
-
-        if (findMatch(TokenType.NIL))
-            return new Expr.Literal(null);
-
-        if (findMatch(TokenType.NUMBER, TokenType.STRING)) {
-            return new Expr.Literal(previous().literal);
-        }
-        if (findMatch(TokenType.IDENTIFIER))
-            return new Expr.Variable(previous());
-
-        if (findMatch(TokenType.LEFT_PAREN)) {
-            Expr expr = expression();
-            consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
-            return new Expr.Grouping(expr);
-        }
-
-        // if here, current is a token that can't start an expression
-        throw error(peek(), "Expect expression.");
     }
 }

@@ -1,12 +1,32 @@
+var i = 1;
+if(i % 20 == 0){
+        print "mod 20";
+        print i;
+} 
+else{
+    print "good";
+}
+
+while(i < 20){    
+    if(i % 20 == 0){
+        print "mod 20";
+    }
+    i += 1;
+    print i;
+}
+
+print "";
+
 var a = 0;
-var a = a + 3;
-var a = a - 5;
+for (; a < 10; a += 1) {
+  print a;
+}
 
-var a += 1;
-print a;
-print a == -1;
+var a = 0;
+var temp;
 
-var a = 100;
-var a -= 1;
-print a;
-print a == 99;
+for (var b = 1; a < 10000; b = temp + b) {
+  print a;
+  temp = a;
+  a = b;
+}

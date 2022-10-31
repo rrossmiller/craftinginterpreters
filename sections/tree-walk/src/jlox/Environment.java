@@ -44,4 +44,19 @@ public class Environment {
 
         throw new RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
     }
+
+    @Override
+    public String toString() {
+        System.out.println("this");
+        for (String k : values.keySet()) {
+            System.out.println("\t"+k + " " + values.get(k));
+        }
+        System.out.println("enclosing");
+        if (enclosing != null)
+            for (String k : enclosing.values.keySet()) {
+                System.out.println("\t"+k + " " + enclosing.values.get(k));
+            }
+
+        return "";
+    }
 }

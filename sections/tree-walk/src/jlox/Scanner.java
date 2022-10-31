@@ -136,7 +136,6 @@ public class Scanner {
                     Lox.error(line, "Unexpected character.");
                 }
                 break;
-
         }
     }
 

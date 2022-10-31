@@ -144,8 +144,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Void visitVarStmt(Var stmt) {
         Object value = null;
-        if (stmt.initializer != null)
+        if (stmt.initializer != null) {
             value = evaluate(stmt.initializer);
+        }
         environment.define(stmt.name.lexeme, value); // if there's no initializer, the value is nil (null)
         return null;
     }
@@ -176,11 +177,23 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
+    void executeBlock(List<Stmt> statements, Environment environment) {
+        Environment previous = this.environment;
+        try {
+            this.environment = environment;
+            for (Stmt statement : statements) {
+                execute(statement);
+            }
+        } finally {
+            this.environment = previous;
+        }
+    }
+
     @Override
     public Void visitIfStmt(If stmt) {
-        if (isTruthy(evaluate(stmt.condition)))
+        if (isTruthy(evaluate(stmt.condition))) {
             execute(stmt.thenBranch);
-        else if (stmt.elseBranch != null)
+        } else if (stmt.elseBranch != null)
             execute(stmt.elseBranch);
         return null;
     }
@@ -238,18 +251,6 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
 
         return object.toString();
-    }
-
-    void executeBlock(List<Stmt> statements, Environment environment) {
-        Environment previous = this.environment;
-        try {
-            this.environment = environment;
-            for (Stmt statement : statements) {
-                execute(statement);
-            }
-        } finally {
-            this.environment = previous;
-        }
     }
 
 }

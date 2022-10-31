@@ -1,27 +1,15 @@
-class Breakfast {
-  cook() {
-    print "Eggs a-fryin'!";
-  }
+var i = 0;
 
-  serve(who) {
-    print "Enjoy your breakfast, " + who + ".";
-  }
+while(i < 20){    
+    if(i % 2 == 0){
+        print "even";
+    }
+    print i;
+    i += 1;
 }
 
-/*
-multi-line block comment as a class description
-*/
-class Brunch < Breakfast{
-    init(who){
-        this.who = who;
-    }
-    serve(){
-        if (this.who == nil){
-            this.who = "guest";
-        }
-        super.serve(this.who);
-    }
-}
+print "";
 
-var b = Brunch(nil);
-b.serve();
+for (var a = 0; a < 10; a = a+ 1) {
+  print a;
+}
