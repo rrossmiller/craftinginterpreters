@@ -144,18 +144,26 @@ class Parser {
         Expr initializer = null;
         if (findMatch(TokenType.EQUAL))
             initializer = expression();
+        else if (findMatch(TokenType.PLUSEQUALS, TokenType.MINUSEQUALS)) {
+            Expr var = new Expr.Variable(name);
+            Token operator = previous();
+            Expr right = factor();
+            initializer = new Expr.Binary(var, operator, right);
+        }
         consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
 
         return new Stmt.Var(name, initializer);
     }
-    private Stmt whileStatement(){
-        consume(TokenType.LEFT_PAREN, "Expect '(' after while'.")   ;
+
+    private Stmt whileStatement() {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after while'.");
         Expr condition = expression();
-        consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.")   ;
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.");
         Stmt body = statement();
 
         return new Stmt.While(condition, body);
     }
+
     private Expr equality() {
         Expr expr = comparison();
 
