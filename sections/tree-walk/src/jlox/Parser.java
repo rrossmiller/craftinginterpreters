@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import jlox.Stmt.Function;
+
 // tokens to statements
 class Parser {
     private static class ParseError extends RuntimeException {
@@ -37,9 +39,11 @@ class Parser {
 
     private Stmt declaration() {
         try {
-            if (findMatch(TokenType.VAR)) {
+            if (findMatch(TokenType.FUN))
+                return function("function");
+            if (findMatch(TokenType.VAR))
                 return varDeclaration();
-            }
+
             return statement();
         } catch (ParseError error) {
             synchronize();
@@ -49,12 +53,16 @@ class Parser {
 
     // each statement gets its own method
     private Stmt statement() {
+        if (match(CLASS))
+            return classDeclaration();
         if (findMatch(TokenType.FOR))
             return forStatement();
         if (findMatch(TokenType.IF))
             return ifStatement();
         if (findMatch(TokenType.PRINT))
             return printStatement();
+        if (findMatch(TokenType.RETURN))
+            return returnStatement();
         if (findMatch(TokenType.WHILE))
             return whileStatement();
         if (findMatch(TokenType.LEFT_BRACE))
@@ -126,10 +134,42 @@ class Parser {
         return new Stmt.Print(value);
     }
 
+    private Stmt returnStatement() {
+        Token keyword = previous();
+        Expr value = null;
+        if (!check(TokenType.SEMICOLON)) {
+            value = expression();
+        }
+
+        consume(TokenType.SEMICOLON, "Expect ';' after return value.");
+        return new Stmt.Return(keyword, value);
+    }
+
     private Stmt expressionStatement() {
         Expr expr = expression();
         consume(TokenType.SEMICOLON, "Expect ';' after expression.");
         return new Stmt.Expression(expr);
+    }
+
+    private Function function(String kind) {
+        Token name = consume(TokenType.IDENTIFIER, "Expect " + kind + " name.");
+        consume(TokenType.LEFT_PAREN, "Expect '(' after " + kind + " name.");
+        List<Token> parameters = new ArrayList<>();
+        if (!check(TokenType.RIGHT_PAREN)) {
+            do {
+                if (parameters.size() >= 255) {
+                    error(peek(), "Can't have more than 255 parameters.");
+                }
+
+                parameters.add(
+                        consume(TokenType.IDENTIFIER, "Expect parameter name."));
+            } while (findMatch(TokenType.COMMA));
+        }
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
+        consume(TokenType.LEFT_BRACE, "Expect '{' before " + kind + " body.");
+        // block() assumes the left brace has alredy been consumed
+        List<Stmt> body = block();
+        return new Stmt.Function(name, parameters, body);
     }
 
     /**
@@ -269,7 +309,36 @@ class Parser {
             return new Expr.Unary(operator, right);
         }
 
-        return primary();
+        return call();
+    }
+
+    private Expr call() {
+        Expr expr = primary();
+
+        while (true) {
+            if (findMatch(TokenType.LEFT_PAREN)) {
+                expr = finishCall(expr);
+            } else {
+                break;
+            }
+        }
+        return expr;
+    }
+
+    private Expr finishCall(Expr callee) {
+        List<Expr> arguments = new ArrayList<>();
+        if (!check(TokenType.RIGHT_PAREN)) {
+            do {
+                if (arguments.size() >= 255) {
+                    error(peek(), "Can't have more than 255 args.");
+                }
+                arguments.add(expression());
+            } while (findMatch(TokenType.COMMA));
+        }
+
+        Token paren = consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.");
+
+        return new Expr.Call(callee, paren, arguments);
     }
 
     private Expr primary() {

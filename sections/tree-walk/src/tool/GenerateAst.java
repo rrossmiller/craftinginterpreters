@@ -16,26 +16,29 @@ public class GenerateAst {
 
         // expression nodes in the AST
         List<String> types = Arrays.asList(
-            "Assign   : Token name, Expr value",
-            "Binary   : Expr left, Token operator, Expr right",
-            "Grouping : Expr expression",
-            "Literal  : Object value",
-            "Logical  : Expr left, Token operator, Expr right",
-            "Unary    : Token operator, Expr right",
-            "Variable : Token name"
+                "Assign   : Token name, Expr value",
+                "Binary   : Expr left, Token operator, Expr right",
+                "Call     : Expr callee, Token paren, List<Expr> arguments",
+                "Grouping : Expr expression",
+                "Literal  : Object value",
+                "Logical  : Expr left, Token operator, Expr right",
+                "Unary    : Token operator, Expr right",
+                "Variable : Token name"
 
         );
         defineAst(outputDir, "Expr", types);
 
         // statement nodes in the AST
         List<String> stmts = Arrays.asList(
-            "Block        : List<Stmt> statements",
-            "Expression   : Expr expression",
-            "If           : Expr condition, Stmt thenBranch, Stmt elseBranch",
-            "Print        : Expr expression",
-            "Var          : Token name, Expr initializer",
-            "While        : Expr condition, Stmt body"
-            );
+                "Block        : List<Stmt> statements",
+                "Class        : Token name, List<Function> methods",
+                "Expression   : Expr expression",
+                "Function     : Token name, List<Token> params, List<Stmt> body",
+                "If           : Expr condition, Stmt thenBranch, Stmt elseBranch",
+                "Print        : Expr expression",
+                "Return       : Token keyword, Expr value",
+                "Var          : Token name, Expr initializer",
+                "While        : Expr condition, Stmt body");
         defineAst(outputDir, "Stmt", stmts);
     }
 
@@ -74,8 +77,8 @@ public class GenerateAst {
             String typeName = type.split(":")[0].trim();
 
             writer.println(
-                "        R visit" + typeName + baseName + "(" + typeName + " " + baseName.toLowerCase() + ");\n");
-            }
+                    "        R visit" + typeName + baseName + "(" + typeName + " " + baseName.toLowerCase() + ");\n");
+        }
 
         writer.println("    }\n");
     }
