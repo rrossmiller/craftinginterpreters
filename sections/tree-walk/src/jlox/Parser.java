@@ -53,7 +53,7 @@ class Parser {
 
     // each statement gets its own method
     private Stmt statement() {
-        if (match(CLASS))
+        if (findMatch(TokenType.CLASS))
             return classDeclaration();
         if (findMatch(TokenType.FOR))
             return forStatement();
@@ -68,6 +68,20 @@ class Parser {
         if (findMatch(TokenType.LEFT_BRACE))
             return new Stmt.Block(block());
         return expressionStatement();
+    }
+
+    private Stmt classDeclaration() {
+        Token name = consume(TokenType.IDENTIFIER, "Expect class name.");
+        consume(TokenType.LEFT_BRACE, "Expect '{' before class body.");
+
+        List<Stmt.Function> methods = new ArrayList<>();
+        while (!check(TokenType.RIGHT_BRACE) && !isAtEnd()) {
+            methods.add(function("method"));
+        }
+
+        consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.");
+
+        return new Stmt.Class(name, methods);
     }
 
     private Stmt forStatement() {
@@ -200,14 +214,22 @@ class Parser {
             if (expr instanceof Expr.Variable) {
                 Token name = ((Expr.Variable) expr).name;
                 return new Expr.Assign(name, value);
+            } else if (expr instanceof Expr.Get) {
+                Expr.Get get = (Expr.Get) expr;
+                return new Expr.Set(get.object, get.name, value);
             }
             error(equals, "Invalid assignment target.");
         } else if (findMatch(TokenType.PLUSEQUALS, TokenType.MINUSEQUALS)) {
-            Token operator = previous();
 
+            Token operator = previous();
             Expr right = factor();
             Token name = ((Expr.Variable) expr).name;
             Expr value = new Expr.Binary(expr, operator, right);
+
+            if (expr instanceof Expr.Get) {
+                Expr.Get get = (Expr.Get) expr;
+                return new Expr.Set(get.object, get.name, value);
+            } // TODO TEST THIS
             return new Expr.Assign(name, value);
 
             // TODO put this in error(equals, "Invalid assignment target.");
@@ -318,6 +340,9 @@ class Parser {
         while (true) {
             if (findMatch(TokenType.LEFT_PAREN)) {
                 expr = finishCall(expr);
+            } else if (findMatch(TokenType.DOT)) {
+                Token name = consume(TokenType.IDENTIFIER, "Expect property name after '.'.");
+                expr = new Expr.Get(expr, name);
             } else {
                 break;
             }
@@ -354,6 +379,10 @@ class Parser {
         if (findMatch(TokenType.NUMBER, TokenType.STRING)) {
             return new Expr.Literal(previous().literal);
         }
+
+        if (findMatch(TokenType.THIS))
+            return new Expr.This(previous());
+
         if (findMatch(TokenType.IDENTIFIER))
             return new Expr.Variable(previous());
 
