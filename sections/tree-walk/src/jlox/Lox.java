@@ -67,12 +67,13 @@ public class Lox {
 
     Resolver resolver = new Resolver(interpreter); // semantic analysis
     resolver.resolve(statements);
-    
+
     // Stop if there was a resolution error.
     if (hadError)
       return;
 
-    interpreter.interpret(statements);
+    new AstPrinter().printTree(statements, false, true);
+    // interpreter.interpret(statements);
   }
 
   static void error(int line, String message) {

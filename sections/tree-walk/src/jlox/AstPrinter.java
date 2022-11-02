@@ -1,8 +1,44 @@
 package jlox;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
 
 class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
+  // accepts a list of statment, otherwise called a program ;)
+  public void printTree(List<Stmt> statements, boolean print, boolean save) {
+    StringBuilder stringBuilder = new StringBuilder();
+    try {
+      for (Stmt statement : statements) {
+        stringBuilder.append(print(statement));
+      }
+    } catch (RuntimeError error) {
+      Lox.runtimeError(error);
+    }
+
+    if (print)
+      System.out.println(stringBuilder.toString());
+
+    if (save) {
+      String outputDir = ".";
+      String path = outputDir + "/AST.txt";
+      PrintWriter writer = null;
+      try {
+        final File f = new File(path);
+        f.createNewFile();
+        writer = new PrintWriter(path, "UTF-8");
+        writer.print(stringBuilder.toString());
+
+      } catch (IOException e) {
+        System.err.println(e.getMessage());
+      } finally {
+        if (writer != null)
+          writer.close();
+      }
+    }
+  }
+
   String print(Expr expr) {
     return expr.accept(this);
   }

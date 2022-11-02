@@ -102,15 +102,15 @@ public class Scanner {
                     // A comment goes until the end of the line.
                     while (peek() != '\n' && !isAtEnd())
                         advance();
-                    addToken(TokenType.COMMENT);
+                    // addToken(TokenType.COMMENT);
                 } else if (match('*')) {
                     // A block comment goes until '*/' termination
                     while (!isAtEnd() && (peek() != '*' && peekNext() != '/'))
                         advance();
                     // consume */
                     advance(2);
-
-                    addToken(TokenType.COMMENT);
+                    // addToken(TokenType.COMMENT);
+                    
                 } else {
                     addToken(TokenType.SLASH);
                 }
