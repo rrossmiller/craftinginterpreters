@@ -6,6 +6,8 @@ import java.io.PrintWriter;
 import java.util.List;
 
 class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
+  private int level = 0;
+
   // accepts a list of statment, otherwise called a program ;)
   public void printTree(List<Stmt> statements, boolean print, boolean save) {
     StringBuilder stringBuilder = new StringBuilder();
@@ -17,8 +19,12 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
       Lox.runtimeError(error);
     }
 
+    String out = stringBuilder.toString();
+    out = out.replaceAll("[\n]+", "\n"); // remove extra spaces (not sure why they're here)
+    out = out.replaceAll("[..]+\n", ""); // remove blank lines (not sure why they're here)
+
     if (print)
-      System.out.println(stringBuilder.toString());
+      System.out.println(out);
 
     if (save) {
       String outputDir = ".";
@@ -28,7 +34,7 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
         final File f = new File(path);
         f.createNewFile();
         writer = new PrintWriter(path, "UTF-8");
-        writer.print(stringBuilder.toString());
+        writer.print(out);
 
       } catch (IOException e) {
         System.err.println(e.getMessage());
@@ -50,30 +56,42 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
   @Override
   public String visitBlockStmt(Stmt.Block stmt) {
     StringBuilder builder = new StringBuilder();
-    builder.append("(block ");
+    builder.append("block");
+    level++;
+    builder.append('\n');
 
     for (Stmt statement : stmt.statements) {
+      for (int i = 0; i < level; i++) {
+        builder.append("..");
+      }
       builder.append(statement.accept(this));
     }
+    level--;
 
-    builder.append(")");
     return builder.toString();
   }
 
   @Override
   public String visitClassStmt(Stmt.Class stmt) {
     StringBuilder builder = new StringBuilder();
-    builder.append("(class " + stmt.name.lexeme);
+    builder.append("class " + stmt.name.lexeme + "\n");
 
     // if (stmt.superclass != null) {
     // builder.append(" < " + print(stmt.superclass));
     // }
 
+    level++;
+    builder.append('\n');
     for (Stmt.Function method : stmt.methods) {
-      builder.append(" " + print(method));
+      for (int i = 0; i < level; i++) {
+        builder.append("..");
+      }
+      builder.append(print(method));
     }
 
-    builder.append(")");
+    builder.append('\n');
+    level--;
+
     return builder.toString();
   }
 
@@ -85,21 +103,30 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
   @Override
   public String visitFunctionStmt(Stmt.Function stmt) {
     StringBuilder builder = new StringBuilder();
-    builder.append("(fun " + stmt.name.lexeme + "(");
+    builder.append("fun " + stmt.name.lexeme);
+    builder.append('\n');
+    level++;
 
     for (Token param : stmt.params) {
-      if (param != stmt.params.get(0))
-        builder.append(" ");
-      builder.append(param.lexeme);
+      for (int i = 0; i < level; i++) {
+        builder.append("..");
+      }
+      builder.append("param- " + param.lexeme);
+      builder.append("\n");
     }
 
-    builder.append(") ");
+    builder.append('\n');
 
     for (Stmt body : stmt.body) {
+      for (int i = 0; i < level; i++) {
+        builder.append("..");
+      }
       builder.append(body.accept(this));
     }
 
-    builder.append(")");
+    // builder.append('\n');
+    level--;
+
     return builder.toString();
   }
 
@@ -146,8 +173,7 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
 
   @Override
   public String visitBinaryExpr(Expr.Binary expr) {
-    return parenthesize(expr.operator.lexeme,
-        expr.left, expr.right);
+    return parenthesize(expr.operator.lexeme, expr.left, expr.right);
   }
 
   @Override
@@ -157,7 +183,7 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
 
   @Override
   public String visitGetExpr(Expr.Get expr) {
-    return parenthesize2(".", expr.object, expr.name.lexeme);
+    return parenthesize2("..", expr.object, expr.name.lexeme);
   }
 
   @Override
@@ -179,8 +205,7 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
 
   @Override
   public String visitSetExpr(Expr.Set expr) {
-    return parenthesize2("=",
-        expr.object, expr.name.lexeme, expr.value);
+    return parenthesize2("=", expr.object, expr.name.lexeme, expr.value);
   }
 
   // @Override
@@ -206,12 +231,17 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
   private String parenthesize(String name, Expr... exprs) {
     StringBuilder builder = new StringBuilder();
 
-    builder.append("(").append(name);
+    builder.append(name);
+    level++;
     for (Expr expr : exprs) {
-      builder.append(" ");
+      builder.append("\n");
+      for (int i = 0; i < level; i++) {
+        builder.append("..");
+      }
       builder.append(expr.accept(this));
     }
-    builder.append(")");
+    builder.append("\n");
+    level--;
 
     return builder.toString();
   }
@@ -222,16 +252,23 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
   private String parenthesize2(String name, Object... parts) {
     StringBuilder builder = new StringBuilder();
 
-    builder.append("(").append(name);
+    builder.append(name);
     transform(builder, parts);
-    builder.append(")");
 
     return builder.toString();
   }
 
   private void transform(StringBuilder builder, Object... parts) {
+    level++;
     for (Object part : parts) {
-      builder.append(" ");
+      if (part instanceof List && ((List) part).size() == 0)
+        continue;
+
+      builder.append("\n");
+      for (int i = 0; i < level; i++) {
+        builder.append("..");
+      }
+
       if (part instanceof Expr) {
         builder.append(((Expr) part).accept(this));
       } else if (part instanceof Stmt) {
@@ -244,6 +281,8 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
         builder.append(part);
       }
     }
+    builder.append("\n");
+    level--;
   }
   // < omit
   /*
