@@ -1,0 +1,6 @@
+run: build
+    @clear
+    ./clox
+
+build:
+    clang *.c -o clox

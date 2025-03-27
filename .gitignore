@@ -20,3 +20,9 @@ setup.cmds
 bin
 gbin
 *.class
+
+# misc
+.clang*
+.zig-cache
+zig-out
+clox
