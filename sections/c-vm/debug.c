@@ -17,6 +17,12 @@ void disassembleChunk(Chunk* chunk, const char* name) {
 
 int disassembleInstruction(Chunk* chunk, int offset) {
     printf("%04d ", offset);
+    if (offset > 0 && chunk->lines[offset] == chunk->lines[offset - 1]) {
+        printf("   | ");
+    } else {
+        printf("%04d ", chunk->lines[offset]);
+        // printf("%d ", chunk->lines[offset]);
+    }
     uint8_t instruction = chunk->code[offset];
     switch (instruction) {
         case OP_CONSTANT:
@@ -32,7 +38,7 @@ int disassembleInstruction(Chunk* chunk, int offset) {
 }
 
 static int constantInstruction(const char* name, Chunk* chunk, int offset) {
-    // look up the constant's value
+    // look up the constant's value (the byte(s) following the op code)
     uint8_t constant = chunk->code[offset + 1];
     printf("%-16s %4d '", name, constant);
     printValue(chunk->constants.values[constant]);
