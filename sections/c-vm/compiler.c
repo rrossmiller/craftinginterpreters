@@ -6,22 +6,31 @@
 #include "scanner.h"
 
 const char* tt_toStr(TokenType t);
-void compile(const char* source) {
-    initScanner(source);
-    int line = -1;
-    while (true) {
-        Token token = scanToken();
-        if (token.line != line) {
-            line = token.line;
-        } else {
-            printf("  |");
-        }
+bool compile(const char* source, Chunk* chunk) {
+    // you're here
+    // https://craftinginterpreters.com/compiling-expressions.html#single-pass-compilation
 
-        // printf("%d: %2d '%.*s'\n", token.line, token.type, token.length, token.start);
-        printf("%d: %s '%.*s'\n", token.line, tt_toStr(token.type), token.length, token.start);
-        if (token.type == TOKEN_EOF)
-            break;
-    }
+    initScanner(source);
+    advance();
+    expression();
+    consume(TOKENEOF, "Expect end of expression.");
+
+    // int line = -1;
+    // while (true) {
+    //     Token token = scanToken();
+    //     if (token.line != line) {
+    //         line = token.line;
+    //     } else {
+    //         printf("  |");
+    //     }
+    //
+    //     // printf("%d: %2d '%.*s'\n", token.line, token.type, token.length,
+    //     // token.start);
+    //     printf("%d: %s '%.*s'\n", token.line, tt_toStr(token.type),
+    //            token.length, token.start);
+    //     if (token.type == TOKEN_EOF)
+    //         break;
+    // }
 }
 
 const char* tt_toStr(TokenType t) {
