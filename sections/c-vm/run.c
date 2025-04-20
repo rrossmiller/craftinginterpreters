@@ -23,7 +23,7 @@ void repl() {
 
 void runFile(const char* path) {
     char* source = readFile(path);
-    printf("%s", source);
+
     InterpretResult result = interpret(source);
     free(source);
 

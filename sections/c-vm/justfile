@@ -1,6 +1,6 @@
 run: build
     @clear
-    ./clox ./run.h
+    ./clox ../../a.lox
 
 build:
     clang *.c -o clox
