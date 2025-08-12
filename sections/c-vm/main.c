@@ -1,12 +1,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "common.h"
 #include "run.h"
 #include "vm.h"
 
 int main(int argc, char* argv[]) {
-
     initVM();
 
     if (argc == 1) {

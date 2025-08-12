@@ -1,6 +1,7 @@
 run: build
     @clear
-    ./clox ../../a.lox
+    @./clox
+    @rm clox
 
 build:
-    clang *.c -o clox
+    clang *.c -o clox -Wall -Wextra -std=c11

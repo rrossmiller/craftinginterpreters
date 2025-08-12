@@ -6,8 +6,6 @@
 
 #include "vm.h"
 
-static char* readFile(const char* path);
-
 void repl() {
     char line[1024];
 
@@ -17,21 +15,7 @@ void repl() {
             printf("\n");
             break;
         }
-        // interpret(line);
-    }
-}
-
-void runFile(const char* path) {
-    char* source = readFile(path);
-
-    InterpretResult result = interpret(source);
-    free(source);
-
-    if (result == INTERPRET_COPMILE_ERROR) {
-        exit(65);
-    }
-    if (result == INTERPRET_RUNTIME_ERROR) {
-        exit(70);
+        interpret(line);
     }
 }
 
@@ -63,4 +47,18 @@ static char* readFile(const char* path) {
 
     fclose(file);
     return buffer;
+}
+
+void runFile(const char* path) {
+    char* source = readFile(path);
+
+    InterpretResult result = interpret(source);
+    free(source);
+
+    if (result == INTERPRET_COPMILE_ERROR) {
+        exit(65);
+    }
+    if (result == INTERPRET_RUNTIME_ERROR) {
+        exit(70);
+    }
 }

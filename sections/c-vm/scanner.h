@@ -49,7 +49,6 @@ typedef enum {
     TOKEN_EOF
 } TokenType;
 
-
 typedef struct {
     TokenType type;
     const char* start;

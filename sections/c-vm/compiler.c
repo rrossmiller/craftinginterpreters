@@ -1,39 +1,89 @@
 #include "compiler.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "common.h"
 #include "scanner.h"
 
-const char* tt_toStr(TokenType t);
-bool compile(const char* source, Chunk* chunk) {
-    // you're here
-    // https://craftinginterpreters.com/compiling-expressions.html#single-pass-compilation
+typedef struct {
+    Token current;
+    Token previous;
+    bool hadError;
+    bool panicMode;
+} Parser;
 
-    initScanner(source);
-    advance();
-    expression();
-    consume(TOKENEOF, "Expect end of expression.");
-
-    // int line = -1;
-    // while (true) {
-    //     Token token = scanToken();
-    //     if (token.line != line) {
-    //         line = token.line;
-    //     } else {
-    //         printf("  |");
-    //     }
-    //
-    //     // printf("%d: %2d '%.*s'\n", token.line, token.type, token.length,
-    //     // token.start);
-    //     printf("%d: %s '%.*s'\n", token.line, tt_toStr(token.type),
-    //            token.length, token.start);
-    //     if (token.type == TOKEN_EOF)
-    //         break;
-    // }
+Parser parser;
+Chunk *compilingChunk;
+static Chunk *currentChunk() {
+    return compilingChunk;
 }
 
-const char* tt_toStr(TokenType t) {
+static void errorAt(Token *token, const char *message) {
+    if (parser.panicMode) {
+        return;
+    }
+    parser.panicMode = true;
+    fprintf(stderr, "[line %d] Error", token->line);
+
+    if (token->type == TOKEN_EOF) {
+        fprintf(stderr, "[line %d] Error", token->line);
+    } else if (token->type == TOKEN_ERROR) {
+        //
+    } else {
+        fprintf(stderr, " at '%.*s'", token->length, token->start);
+    }
+    fprintf(stderr, ": %s\n", message);
+    parser.hadError = true;
+}
+
+static void errorAtCurrent(const char *message) {
+    errorAt(&parser.current, message);
+}
+
+static void error(const char *message) {
+    errorAt(&parser.previous, message);
+}
+
+static void advance() {
+    parser.previous = parser.current;
+
+    for (;;) {
+        parser.current = scanToken();
+        if (parser.current.type != TOKEN_ERROR)
+            break;
+
+        errorAtCurrent(parser.current.start);
+    }
+}
+
+static void consume(TokenType type, const char *message) {
+    if (parser.current.type == type) {
+        advance();
+        return;
+    }
+    errorAtCurrent(message);
+}
+
+static void emitByte(uint8_t byte) {
+    writeChunk(currentChunk(), byte, parser.previous.line);
+}
+static void emitBytes(uint8_t byte1, uint8_t byte2) {
+    emitByte(byte1);
+    emitByte(byte2);
+}
+
+static void emitReturn() {
+    emitByte(OP_RETURN);
+}
+static void endCompiler() {
+    emitReturn();
+}
+static void expression() {
+    // What goes here?
+}
+
+const char *tt_toStr(TokenType t) {
     switch (t) {
         // Single-character tokens.
         case TOKEN_LEFT_PAREN:
@@ -120,4 +170,36 @@ const char* tt_toStr(TokenType t) {
         case TOKEN_EOF:
             return "TOKEN_EOF";
     }
+}
+
+bool compile(const char *source, Chunk *chunk) {
+    initScanner(source);
+
+    //
+    // int line = -1;
+    // for (;;) {
+    //     Token token = scanToken();
+    //     if (token.line != line) {
+    //         printf("%4d ", token.line);
+    //         line = token.line;
+    //     } else {
+    //         printf("   | ");
+    //     }
+    //     printf("%2d '%.*s'\n", token.type, token.length, token.start);
+    //
+    //     if (token.type == TOKEN_EOF)
+    //         return false;
+    // }
+    //
+    compilingChunk = chunk;
+
+    parser.hadError = false;
+    parser.panicMode = false;
+
+    advance();
+    expression();
+    consume(TOKEN_EOF, "Expect end of expression.");
+    endCompiler();
+
+    return !parser.hadError;
 }
